@@ -5,6 +5,7 @@ from optparse import OptionParser
 import time
 import GamblingConstants as constante
 import matplotlib.pyplot as plt
+import crud.GamblingCRUD import GamblingCRUD
 
 class GamblingBot(object):
     options = ""
@@ -13,7 +14,8 @@ class GamblingBot(object):
     lista_grafico_x = []
     def __init__(self, options, args):
         self.tipo_jogo = options.jogo
-        self.concurso = options.concurso		
+        self.concurso = options.concurso
+        GamblingCRUD.connectDB()
 
     def retorna_url(self, tipo_jogo):
         if self.tipo_jogo.lower() == "megasena":
@@ -33,7 +35,9 @@ class GamblingBot(object):
         self.string_resultado = lambda x : "resultado" if self.tipo_jogo == "megasena" else ("de_resultado" if self.tipo_jogo == "lotofacil" else None)
         while contador > int(self.concurso) - 10:
             vezes += 1
-            self.processa_resposta(lista_resultados, lista_resultado_atual, contador)
+            resultado = GamblingCRUD.consulta_registro(self.tipo_jogo, contador)
+            if (resultado == ''):
+                self.processa_resposta(lista_resultados, lista_resultado_atual, contador)
             contador -= 1
             if (vezes == 5):
                 time.sleep(10)
@@ -45,6 +49,7 @@ class GamblingBot(object):
         resposta = requests.post(self.retorna_url(self.tipo_jogo) + str(contador))
         resposta = self.parse(resposta)
         lista_resultado_atual = resposta[self.string_resultado(self.tipo_jogo)].split('-')
+        GamblingCRUD.insere_registro(self.tipo_jogo, contador, lista_resultado_atual)
         print(lista_resultado_atual)
         lista_resultados += lista_resultado_atual
         
@@ -70,10 +75,11 @@ class GamblingBot(object):
         self.desenha_grafico()
         
     def desenha_grafico(self):
+        GamblingCRUD.close_connection()
         plt.plot(self.lista_grafico_x, self.lista_grafico_y)
         plt.title(u"Gráfico de números mais sorteados")
         plt.grid(True)
-        plt.show()
+        plt.show()       
     
     def parse(self, resposta_json):
         return resposta_json.json()
