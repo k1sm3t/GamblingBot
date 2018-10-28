@@ -12,7 +12,7 @@ class GamblingCRUD(object):
     def connectDB(self):
         self.conn = sqlite3.connect('Gambling.db')    
         self.cursor = self.conn.cursor()
-        if (1 == 1):
+        if (1 == 0):
             self.cria_tabelas()
     
     def cria_tabelas(self):
@@ -56,25 +56,27 @@ class GamblingCRUD(object):
                 
                 ''')
         
-    def insere_registro(self, tipo_jogo, concurso, resultado):        
+    def insere_registro(self, tipo_jogo, concurso, resultado):
+        separador = '-'
+        resultado_joinado = separador.join(resultado)
         if (tipo_jogo.lower() == 'megasena'):
-            self.cursor.execute('INSERT INTO resultados_megasena VALUES ({a},{b})'.format(a=concurso, b=resultado))
+            self.cursor.execute('INSERT INTO resultados_megasena (numero_concurso, resultado) VALUES ("{a}","{b}")'.format(a=concurso, b=resultado_joinado))
         elif (tipo_jogo.lower() == 'lotofacil'):
-            self.cursor.execute('INSERT INTO resultados_lotofacil VALUES ({a},{b})'.format(a=concurso, b=resultado))
+            self.cursor.execute('INSERT INTO resultados_lotofacil (numero_concurso, resultado) VALUES ("{a}","{b}")'.format(a=concurso, b=resultado_joinado))
         elif (tipo_jogo.lower() == 'lotomania'):
-            self.cursor.execute('INSERT INTO resultados_lotomania VALUES ({a},{b})'.format(a=concurso, b=resultado))
+            self.cursor.execute('INSERT INTO resultados_lotomania (numero_concurso, resultado) VALUES ("{a}","{b}")'.format(a=concurso, b=resultado_joinado))
         elif (tipo_jogo.lower() == 'duplasena'):
-            self.cursor.execute('INSERT INTO resultados_duplasena VALUES ({a},{b})'.format(a=concurso, b=resultado))
+            self.cursor.execute('INSERT INTO resultados_duplasena (numero_concurso, resultado) VALUES ("{a}","{b}")'.format(a=concurso, b=resultado_joinado))
             
         self.conn.commit()
             
     def consulta_registro(self, tipo_jogo, concurso):
         if (tipo_jogo.lower() == 'megasena'):
-            sql = 'SELECT resultado FROM resultados_megasena WHERE concurso = ?'
+            sql = 'SELECT resultado FROM resultados_megasena WHERE numero_concurso = ?'
         elif (tipo_jogo.lower() == 'lotofacil'):
-            sql = 'SELECT resultado FROM resultados_lotofacil WHERE concurso = ?'
+            sql = 'SELECT resultado FROM resultados_lotofacil WHERE numero_concurso = ?'
         elif (tipo_jogo.lower() == 'lotomania'):
-            sql = 'SELECT resultado FROM resultados_lotomania WHERE concurso = ?'
+            sql = 'SELECT resultado FROM resultados_lotomania WHERE numero_concurso = ?'
             
         self.cursor.execute(sql, [(concurso)])
         

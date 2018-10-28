@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-#encoding: utf-8
+#coding: utf-8
 import requests
 from optparse import OptionParser
 import time
 import GamblingConstants as constante
 import matplotlib.pyplot as plt
-import crud.GamblingCRUD import GamblingCRUD
+from crud.GamblingCRUD import *
 
 class GamblingBot(object):
     options = ""
@@ -13,9 +13,10 @@ class GamblingBot(object):
     lista_grafico_y = []
     lista_grafico_x = []
     def __init__(self, options, args):
+        self.db_crud = GamblingCRUD()
         self.tipo_jogo = options.jogo
         self.concurso = options.concurso
-        GamblingCRUD.connectDB()
+        self.db_crud.connectDB()
 
     def retorna_url(self, tipo_jogo):
         if self.tipo_jogo.lower() == "megasena":
@@ -33,11 +34,14 @@ class GamblingBot(object):
         contador = int(self.concurso)
         vezes = 0
         self.string_resultado = lambda x : "resultado" if self.tipo_jogo == "megasena" else ("de_resultado" if self.tipo_jogo == "lotofacil" else None)
-        while contador > int(self.concurso) - 10:
+        while contador > int(self.concurso) - 100:
             vezes += 1
-            resultado = GamblingCRUD.consulta_registro(self.tipo_jogo, contador)
-            if (resultado == ''):
+            resultado = self.db_crud.consulta_registro(self.tipo_jogo, contador)
+            if (resultado == None):
                 self.processa_resposta(lista_resultados, lista_resultado_atual, contador)
+            else:
+                lista_resultados += resultado[0].split('-')
+                print(resultado)
             contador -= 1
             if (vezes == 5):
                 time.sleep(10)
@@ -45,12 +49,13 @@ class GamblingBot(object):
                 
         self.conta_ocorrencias(lista_resultados)
     
-    def processa_resposta(self, lista_resultados, lista_resultado_atual, contador):        
+    def processa_resposta(self, lista_resultados, lista_resultado_atual, contador):
         resposta = requests.post(self.retorna_url(self.tipo_jogo) + str(contador))
         resposta = self.parse(resposta)
         lista_resultado_atual = resposta[self.string_resultado(self.tipo_jogo)].split('-')
-        GamblingCRUD.insere_registro(self.tipo_jogo, contador, lista_resultado_atual)
+        self.db_crud.insere_registro(self.tipo_jogo, contador, lista_resultado_atual)
         print(lista_resultado_atual)
+        
         lista_resultados += lista_resultado_atual
         
     def conta_ocorrencias(self, lista_resultados):
@@ -75,7 +80,7 @@ class GamblingBot(object):
         self.desenha_grafico()
         
     def desenha_grafico(self):
-        GamblingCRUD.close_connection()
+        self.db_crud.close_connection()
         plt.plot(self.lista_grafico_x, self.lista_grafico_y)
         plt.title(u"Gráfico de números mais sorteados")
         plt.grid(True)
